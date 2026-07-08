@@ -1,9 +1,43 @@
-# 6m-data-coaching-assignment-project
-Project assignment requirement
-
 # Module 1 Assignment Project – Singapore Jobs Analytics
 
 Design a simple data product (dashboard or web app) using a real-world CSV of Singapore job postings (~1M+ rows). Your goal is to solve a clear business problem for a specific user group using insights from the data.
+
+> **This looks big. It isn't** — it's every small skill from Module 1, chained together: loading data, cleaning it, exploring it, and showing what you found. Follow the milestones below and you'll be fine.
+
+---
+
+## 🚀 Getting Started (do this first)
+
+**Step 0 — Load a sample, not the whole file.** The full file has ~1M rows; taste a spoonful before cooking the whole pot. Build everything on the fast subset, and scale up once it works:
+
+```python
+import pandas as pd
+df = pd.read_csv('sg_jobs.csv', nrows=50000)   # first 50,000 rows only
+```
+
+**Then take your first three EDA steps** (adjust column names to what's actually in the file):
+
+```python
+df.shape                    # 1. How big is your sample? (rows, columns)
+df.info()                   # 2. What columns do you have, and what types are they?
+df['salary'].describe()     # 3. Pick one numeric column — what's typical, what's extreme?
+```
+
+That's it — you've started. Everything else in this brief builds on these first looks.
+
+**Where to get the dataset:** [Dataset link — provided by your instructor]
+
+---
+
+## 🗓️ Suggested Milestones
+
+A gentle ramp so you're never cramming at the end:
+
+| Week | You should have... |
+|------|--------------------|
+| **Week 1** | Business case chosen + data loaded (sample first!) + first EDA done |
+| **Week 2** | Cleaning + feature engineering + your key charts drafted |
+| **Week 3** | Dashboard assembled + story polished + presentation rehearsed |
 
 ---
 
@@ -75,3 +109,19 @@ Suggested flow:
   - README with setup steps.
 
 Focus on a **coherent story** from business question → data process → dashboard → insights, rather than advanced techniques.
+
+---
+
+## 📊 How You'll Be Assessed
+
+| Criterion | Weight | What excellent looks like |
+|-----------|--------|---------------------------|
+| Business case clarity | 20% | A specific user, a specific decision, and a clear reason your dashboard helps them make it. |
+| Data handling & cleaning | 25% | Cleaning choices are explained and justified — we can see *why* you handled missing values or salary formats the way you did. |
+| Dashboard functionality | 25% | Views load, filters work, and each element answers part of the business question. |
+| Insight & story | 20% | Findings are framed as answers ("Roles X and Y are surging in the East"), not just charts. |
+| Presentation | 10% | Clear, within time, everyone contributes, and the demo lands. |
+
+**To pass:** a working dashboard with at least one overview view and one drill-down, tied to a stated business question.
+
+**Working in teams:** [Team size: X — confirm with your instructor]. The presentation is assessed as a team; your commit history is assessed individually — so push your own work under your own GitHub account.
