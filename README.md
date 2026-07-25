@@ -4,6 +4,33 @@ Design a simple data product (dashboard or web app) using a real-world CSV of Si
 
 > **This looks big. It isn't** — it's every small skill from Module 1, chained together: loading data, cleaning it, exploring it, and showing what you found. Follow the milestones below and you'll be fine.
 
+## Data dictionary
+
+| Column | Type | Notes |
+| :---- | :---- | :---- |
+| `categories` | str (JSON array) | e.g. `[{"id":21,"category":"Information Technology"}]` — a job can belong to **multiple** categories. You will need to parse this. |
+| `employmentTypes` | str | Permanent, Full Time, Contract, Part Time, Temporary, Internship/Attachment, Freelance, Flexi-work. |
+| `metadata_expiryDate` | date | When the posting expires. |
+| `metadata_isPostedOnBehalf` | bool | True if a recruiter posted on behalf of the hiring company. |
+| `metadata_jobPostId` | str | Unique ID, e.g. `MCF-2023-0252866`. |
+| `metadata_newPostingDate` | date | Date of the most recent re-post. |
+| `metadata_originalPostingDate` | date | Date the job was first posted. |
+| `metadata_repostCount` | int | How many times the same job has been re-posted. A signal of hard-to-fill roles. |
+| `metadata_totalNumberJobApplication` | int | Number of applications received. |
+| `metadata_totalNumberOfView` | int | Number of times the post was viewed. |
+| `minimumYearsExperience` | int | Years of experience required. |
+| `numberOfVacancies` | int | Open headcount. |
+| `positionLevels` | str | Fresh/entry, Junior Executive, Executive, Senior Executive, Professional, Manager, Middle Management, Senior Management, Non-executive. |
+| `postedCompany_name` | str | The poster (often a recruitment agency, **not** the hiring employer). |
+| `salary_minimum` / `salary_maximum` | int | Salary band. |
+| `salary_type` | str | Almost all `Monthly`. |
+| `status_jobStatus` | str | Open, Closed, Re-open. |
+| `title` | str | Free-text job title. |
+| `average_salary` | float | Pre-computed mean of min/max. |
+
+---
+
+
 ---
 
 ## 🚀 Getting Started (do this first)
