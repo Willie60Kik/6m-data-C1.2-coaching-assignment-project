@@ -1,0 +1,4 @@
+SGJobData.csv
+SGJobData_cleaned.csv
+__pycache__/
+*.pyc

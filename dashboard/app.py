@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-CSV_PATH = os.path.join(os.path.dirname(__file__), "..", "SGJobData_Cleaned.csv")
+CSV_PATH = os.path.join(os.path.dirname(__file__), "..", "SGJobData_cleaned.csv")
 
 # Palette (validated categorical set, fixed order — see dataviz skill)
 CATEGORICAL_PALETTE = [
@@ -34,6 +34,8 @@ TABLE_COLS = [
     "salary_minimum",
     "average_salary",
     "metadata_jobPostId",
+    "metadata_totalNumberJobApplication",
+    "metadata_totalNumberOfView",
 ]
 
 LOAD_COLS = [
@@ -50,6 +52,8 @@ LOAD_COLS = [
     "status_jobStatus",
     "metadata_isPostedOnBehalf",
     "metadata_jobPostId",
+    "metadata_totalNumberJobApplication",
+    "metadata_totalNumberOfView",
 ]
 
 JOB_STATUS_ORDER = ["Open", "Re-open", "Closed"]
@@ -135,6 +139,13 @@ minimum_experience = st.sidebar.number_input(
     value=exp_bound,
     step=1,
 )
+maximum_experience = st.sidebar.number_input(
+    "Minimum years experience (at most)",
+    min_value=exp_bound,
+    max_value=exp_upper,
+    value=exp_upper,
+    step=1,
+)
 
 present_statuses = set(df["status_jobStatus"].dropna().unique())
 job_statuses = [s for s in JOB_STATUS_ORDER if s in present_statuses] + sorted(
@@ -153,6 +164,7 @@ mask = pd.Series(True, index=df.index)
 mask &= df["salary_minimum"] >= salary_minimum_floor
 mask &= df["salary_maximum"] <= salary_maximum_ceiling
 mask &= df["minimumYearsExperience"] >= minimum_experience
+mask &= df["minimumYearsExperience"] <= maximum_experience
 mask &= df["average_salary"] >= average_salary_floor
 
 if selected_employment_types:
@@ -182,61 +194,23 @@ weighted_avg_salary = (
     else None
 )
 
-col1, col2, col3 = st.columns(3)
+total_applications = filtered["metadata_totalNumberJobApplication"].sum()
+total_views = filtered["metadata_totalNumberOfView"].sum()
+
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 col1.metric("Matching postings", f"{len(filtered):,}")
 col2.metric(
     "Average salary",
     f"${weighted_avg_salary:,.0f}" if weighted_avg_salary is not None else "—",
 )
 col3.metric("Companies", f"{filtered['postedCompany_name'].nunique():,}")
+col4.metric("Total job applications", f"{total_applications:,.0f}")
+col5.metric("Total views", f"{total_views:,.0f}")
+col6.metric("Total vacancies", f"{total_vacancies:,.0f}")
 
 st.divider()
-
-# ---- Main table ----
-st.subheader("Job postings")
-
-table_col1, table_col2 = st.columns([3, 1])
-title_search = table_col1.text_input("Filter by title contains", value="", placeholder="e.g. engineer")
-show_job_post_id = table_col2.checkbox("Show Job Post ID", value=False)
-
-if title_search:
-    filtered = filtered[filtered["title"].str.contains(title_search, case=False, na=False)]
-
-table_column_order = [
-    "postedCompany_name",
-    "positionLevels",
-    "title",
-    "numberOfVacancies",
-    "employmentTypes",
-    "minimumYearsExperience",
-    "salary_maximum",
-    "salary_minimum",
-    "average_salary",
-]
-if show_job_post_id:
-    table_column_order.append("metadata_jobPostId")
-
-st.dataframe(
-    filtered,
-    width="stretch",
-    hide_index=True,
-    column_order=table_column_order,
-    column_config={
-        "postedCompany_name": st.column_config.TextColumn("Company"),
-        "positionLevels": st.column_config.TextColumn("Position level"),
-        "title": st.column_config.TextColumn("Title", width="large"),
-        "numberOfVacancies": st.column_config.NumberColumn("Vacancies", format="%d"),
-        "employmentTypes": st.column_config.TextColumn("Employment type"),
-        "minimumYearsExperience": st.column_config.NumberColumn("Min. years experience", format="%d"),
-        "salary_maximum": st.column_config.NumberColumn("Salary max", format="$%d"),
-        "salary_minimum": st.column_config.NumberColumn("Salary min", format="$%d"),
-        "average_salary": st.column_config.NumberColumn("Avg salary", format="$%.0f"),
-        "metadata_jobPostId": st.column_config.TextColumn("Job Post ID"),
-    },
-)
 
 # ---- Pie charts ----
-st.divider()
 st.subheader("Breakdown of matching postings")
 
 
@@ -292,3 +266,47 @@ if len(filtered):
         )
 else:
     st.info("No postings match the current filters.")
+
+# ---- Main table ----
+st.divider()
+st.subheader("Job postings")
+
+table_col1, table_col2 = st.columns([3, 1])
+title_search = table_col1.text_input("Filter by title contains", value="", placeholder="e.g. engineer")
+show_job_post_id = table_col2.checkbox("Show Job Post ID", value=False)
+
+if title_search:
+    filtered = filtered[filtered["title"].str.contains(title_search, case=False, na=False)]
+
+table_column_order = [
+    "postedCompany_name",
+    "positionLevels",
+    "title",
+    "numberOfVacancies",
+    "employmentTypes",
+    "minimumYearsExperience",
+    "salary_maximum",
+    "salary_minimum",
+    "average_salary",
+]
+if show_job_post_id:
+    table_column_order.append("metadata_jobPostId")
+
+st.dataframe(
+    filtered,
+    width="stretch",
+    hide_index=True,
+    column_order=table_column_order,
+    column_config={
+        "postedCompany_name": st.column_config.TextColumn("Company"),
+        "positionLevels": st.column_config.TextColumn("Position level"),
+        "title": st.column_config.TextColumn("Title", width="large"),
+        "numberOfVacancies": st.column_config.NumberColumn("Vacancies", format="%d"),
+        "employmentTypes": st.column_config.TextColumn("Employment type"),
+        "minimumYearsExperience": st.column_config.NumberColumn("Min. years experience", format="%d"),
+        "salary_maximum": st.column_config.NumberColumn("Salary max", format="$%,d"),
+        "salary_minimum": st.column_config.NumberColumn("Salary min", format="$%,d"),
+        "average_salary": st.column_config.NumberColumn("Avg salary", format="$%,.0f"),
+        "metadata_jobPostId": st.column_config.TextColumn("Job Post ID"),
+    },
+)
