@@ -15,7 +15,7 @@ o	Let me know if you disocover something else.
 
 3)	Graphs/Tables to plot
 -	TBA, adjust according to use case. 
-
+--- 
 
 Design a simple data product (dashboard or web app) using a real-world CSV of Singapore job postings (~1M+ rows). Your goal is to solve a clear business problem for a specific user group using insights from the data.
 
