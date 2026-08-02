@@ -1,7 +1,7 @@
 # Module 1 Assignment Project – Singapore Jobs Analytics
 
-# Group-self discussion # 
-1)	Cleaning of data
+# Group-self discussion #
+1)	Cleaning of data.
 -	Removing empty rows
 -	Deleted two columns (‘occupationId’, ‘status_id’)
 -	Removing duplicates - What criteria do you consider duplicate?
