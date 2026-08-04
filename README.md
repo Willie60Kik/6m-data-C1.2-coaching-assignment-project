@@ -1,5 +1,23 @@
 # Module 1 Assignment Project – Singapore Jobs Analytics
 
+# Group-self discussion #
+1)	Cleaning of data.
+-	Removing empty rows
+-	Deleted two columns (‘occupationId’, ‘status_id’)
+-	Removing duplicates - What criteria do you consider duplicate?
+o	Check if all values except for job ID is identical. 
+o	Let me know if you disocover something else. 
+-	Removing anomalous data (unreasonable values for salary, min years of experience = 80)
+
+2)	Problem Statement (important)
+-	Analyze overall trends in different sectors?
+-	Benchmark salary?
+
+3)	Graphs/Tables to plot
+-	TBA, adjust according to use case (with inputs from all of us.)
+
+--- 
+
 Design a simple data product (dashboard or web app) using a real-world CSV of Singapore job postings (~1M+ rows). Your goal is to solve a clear business problem for a specific user group using insights from the data.
 
 > **This looks big. It isn't** — it's every small skill from Module 1, chained together: loading data, cleaning it, exploring it, and showing what you found. Follow the milestones below and you'll be fine.
