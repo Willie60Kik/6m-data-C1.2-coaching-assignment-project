@@ -258,7 +258,8 @@ if len(filtered):
     pie_col1, pie_col2 = st.columns(2)
     with pie_col1:
         st.plotly_chart(
-            make_pie(filtered["positionLevels"], "Position level"), width="stretch"
+            make_pie(filtered["positionLevels"], "Position level"),  use_container_width=True
+            #width="stretch"
         )
     with pie_col2:
         st.plotly_chart(
@@ -294,7 +295,8 @@ if show_job_post_id:
 
 st.dataframe(
     filtered,
-    width="stretch",
+    #width="stretch", 
+    use_container_width=True,
     hide_index=True,
     column_order=table_column_order,
     column_config={
