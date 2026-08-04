@@ -14,7 +14,7 @@ o	Let me know if you disocover something else.
 -	Benchmark salary?
 
 3)	Graphs/Tables to plot
--	TBA, adjust according to use case. 
+-	TBA, adjust according to use case (with inputs from all of us)
 
 --- 
 
