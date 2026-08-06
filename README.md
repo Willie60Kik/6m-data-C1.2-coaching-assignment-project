@@ -1,20 +1,5 @@
 # Module 1 Assignment Project – Singapore Jobs Analytics
 
-# Group-self discussion #
-1)	Cleaning of data.
--	Removing empty rows
--	Deleted two columns (‘occupationId’, ‘status_id’)
--	Removing duplicates - What criteria do you consider duplicate?
-o	Check if all values except for job ID is identical. 
-o	Let me know if you disocover something else. 
--	Removing anomalous data (unreasonable values for salary, min years of experience = 80)
-
-2)	Problem Statement (important)
--	Analyze overall trends in different sectors?
--	Benchmark salary?
-
-3)	Graphs/Tables to plot
--	TBA, adjust according to use case (with inputs from all of us.)
 
 --- 
 
