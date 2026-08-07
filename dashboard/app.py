@@ -280,13 +280,57 @@ st.divider()
 # ---- Business Q1-4: industry breakdowns (scoped to selected Categories) ----
 
 
+SEQUENTIAL_SALARY_SCALE = [[0, "#dbe9fa"], [1, CATEGORICAL_PALETTE[0]]]
+SEQUENTIAL_BLUE_SCALE = SEQUENTIAL_SALARY_SCALE
+SEQUENTIAL_PURPLE_SCALE = [[0, "#ded8f5"], [1, CATEGORICAL_PALETTE[6]]]
+SEQUENTIAL_RED_SCALE = [[0, "#f8d9d8"], [1, CATEGORICAL_PALETTE[7]]]
+
+
+def make_metric_bar(
+    series: pd.Series,
+    colorscale,
+    value_format: str,
+    xaxis_title: str,
+) -> go.Figure:
+    fig = go.Figure(
+        go.Bar(
+            x=series.values,
+            y=series.index,
+            orientation="h",
+            marker=dict(
+                color=series.values,
+                colorscale=colorscale,
+                cornerradius=4,
+                showscale=False,
+            ),
+            text=[value_format.format(v) for v in series.values],
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate="%{y}<br>%{x:,.2f}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        template="plotly_dark",
+        height=600,
+        bargap=0.35,
+        margin=dict(l=10, r=70, t=40, b=10),
+        xaxis=dict(title=xaxis_title, tickformat=",.0f"),
+        yaxis=dict(title=None, categoryorder="total ascending"),
+    )
+    return fig
+
+
 def make_category_salary_bar(series: pd.Series) -> go.Figure:
     fig = go.Figure(
         go.Bar(
             x=series.values,
             y=series.index,
             orientation="h",
-            marker=dict(color=CATEGORICAL_PALETTE[0], cornerradius=4),
+            marker=dict(
+                color=series.values,
+                colorscale=SEQUENTIAL_SALARY_SCALE,
+                cornerradius=4,
+            ),
             text=[f"${v:,.0f}" for v in series.values],
             textposition="outside",
             cliponaxis=False,
@@ -307,46 +351,6 @@ def make_category_salary_bar(series: pd.Series) -> go.Figure:
             tickformat="$,.0f",
         ),
         yaxis=dict(title=None),
-    )
-    return fig
-
-
-def make_category_pie(counts: pd.Series, value_label: str) -> go.Figure:
-    if len(counts) > PIE_TOP_N:
-        top = counts.iloc[:PIE_TOP_N]
-        other_total = counts.iloc[PIE_TOP_N:].sum()
-        counts = pd.concat([top, pd.Series({"Other": other_total})])
-
-    colors = CATEGORICAL_PALETTE[: len(counts)]
-    if "Other" in counts.index:
-        colors = colors[: len(counts) - 1] + [OTHER_COLOR]
-
-    total = counts.sum()
-    legend_labels = [
-        f"{name} — {value / total:.1%} ({value:,.0f} {value_label})"
-        for name, value in counts.items()
-    ]
-
-    fig = go.Figure(
-        go.Pie(
-            labels=legend_labels,
-            values=counts.values,
-            marker=dict(colors=colors, line=dict(color=SURFACE, width=2)),
-            textinfo="none",
-            hovertext=counts.index,
-            hovertemplate="%{hovertext}<br>%{percent} — %{value:,.0f} "
-            + value_label
-            + "<extra></extra>",
-            sort=False,
-        )
-    )
-    fig.update_layout(
-        height=420,
-        plot_bgcolor=SURFACE,
-        paper_bgcolor=SURFACE,
-        font=dict(color=TEXT_PRIMARY, family="system-ui, -apple-system, sans-serif"),
-        margin=dict(l=10, r=10, t=10, b=10),
-        legend=dict(orientation="v", yanchor="middle", y=0.5, font=dict(size=11)),
     )
     return fig
 
@@ -383,7 +387,15 @@ category_agg = category_rows.groupby("category_names").agg(
     total_reposts=("metadata_repostCount", "sum"),
 )
 
-st.subheader("Business Q1: Which industries offer the highest average salaries")
+st.subheader("💰 Business Question 1")
+st.markdown(
+    """
+### Which industries offer the highest average salaries?
+
+This visualization compares the **average monthly salary** across industries
+to identify the highest-paying sectors, among the categories selected on the left.
+"""
+)
 category_salary = (
     category_agg["avg_salary"]
     .sort_values(ascending=False)
@@ -392,53 +404,249 @@ category_salary = (
 )
 render_category_chart(category_salary, make_category_salary_bar)
 
-st.subheader("Business Q2: Which industries have the greatest hiring demand?")
-vacancies_by_category = category_agg["total_vacancies"].sort_values(ascending=False)
+top_salary_industry = None
+if len(category_salary):
+    top_ranked = category_salary.sort_values(ascending=False)
+    highest_name, highest_salary = top_ranked.index[0], top_ranked.iloc[0]
+    top_salary_industry = highest_name
+    runner_up_lines = "".join(
+        f"<li>{name} — ${salary:,.0f}</li>"
+        for name, salary in top_ranked.iloc[1:3].items()
+    )
+    st.markdown(
+        f"""
+<div style="
+background-color:#184d2b;
+padding:20px;
+border-radius:10px;
+border-left:6px solid #4CAF50;
+">
+<h3 style="color:#7CFC98;">📊 Business Insight</h3>
+<p style="font-size:19px; color:white;">
+The <b>{highest_name}</b> industry offers the highest average monthly salary among
+the selected categories, at approximately
+<span style="font-size:24px; font-weight:bold; color:#FFD54F;">
+S${highest_salary:,.0f}
+</span>
+</p>
+<ul style="font-size:16px; color:white;">
+{runner_up_lines}
+</ul>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+st.markdown("---")
+st.subheader("💼 Business Question 2")
+st.markdown(
+    """
+### Which industries have the greatest hiring demand?
+
+This visualization compares the **number of open vacancies** across industries
+to identify the sectors with the highest hiring activity, among the categories selected on the left.
+"""
+)
+st.subheader("💼 Hiring Demand by Industry")
+vacancies_by_category = (
+    category_agg["total_vacancies"].sort_values(ascending=False).head(CATEGORY_SALARY_TOP_N)
+)
 render_category_chart(
-    vacancies_by_category, lambda s: make_category_pie(s, "vacancies")
+    vacancies_by_category,
+    lambda s: make_metric_bar(
+        s.sort_values(ascending=True),
+        SEQUENTIAL_BLUE_SCALE,
+        "{:,.0f}",
+        "Number of open vacancies",
+    ),
 )
 
-st.subheader("Business Q3: Which industries receive the most number of applications?")
-applications_by_category = category_agg["total_applications"].sort_values(ascending=False)
+if len(vacancies_by_category):
+    ranked = vacancies_by_category.sort_values(ascending=False)
+    highest_name, highest_val = ranked.index[0], ranked.iloc[0]
+    second_name, second_val = ranked.index[1], ranked.iloc[1]
+    third_name, third_val = ranked.index[2], ranked.iloc[2]
+    st.markdown(
+        f"""
+<div style="
+background-color:#184d2b;
+padding:20px;
+border-radius:10px;
+border-left:6px solid #4CAF50;
+">
+<h3 style="color:#7CFC98;">📈 Business Insight</h3>
+<p style="font-size:19px; color:white;">
+The <b>{highest_name}</b> industry has the highest hiring demand with
+<span style="font-size:24px; font-weight:bold; color:#FFD54F;">
+{highest_val:,.0f}
+</span>
+open vacancies.
+</p>
+<p style="font-size:18px; color:white;">
+It is followed by
+<b>{second_name}</b>
+<span style="font-size:18px; font-weight:bold; color:#FFD54F;">
+{second_val:,.0f}
+</span> vacancies and
+<b>{third_name}</b>
+<span style="font-size:18px; font-weight:bold; color:#FFD54F;">
+{third_val:,.0f}
+</span> vacancies.
+</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+st.markdown("---")
+st.subheader("📥 Business Question 3")
+st.markdown(
+    """
+### Which industries receive the most applications?
+"""
+)
+st.write(
+    "This visualization compares the total number of applications received across industries."
+)
+st.subheader("Application Trend 📥")
+applications_by_category = (
+    category_agg["total_applications"].sort_values(ascending=False).head(CATEGORY_SALARY_TOP_N)
+)
 render_category_chart(
-    applications_by_category, lambda s: make_category_pie(s, "applications")
+    applications_by_category,
+    lambda s: make_metric_bar(
+        s.sort_values(ascending=True),
+        SEQUENTIAL_PURPLE_SCALE,
+        "{:,.0f}",
+        "Number of applications",
+    ),
 )
 
-st.subheader("Business Q4: Which industries are hardest to fill?")
-st.caption("Ranked by total repost count — how often employers had to relist a vacancy.")
-reposts_by_category = category_agg["total_reposts"].sort_values(ascending=False)
-render_category_chart(reposts_by_category, lambda s: make_category_pie(s, "reposts"))
+if len(applications_by_category):
+    ranked = applications_by_category.sort_values(ascending=False)
+    highest_name, highest_val = ranked.index[0], ranked.iloc[0]
+    second_name, second_val = ranked.index[1], ranked.iloc[1]
+    third_name, third_val = ranked.index[2], ranked.iloc[2]
+    st.markdown(
+        f"""
+<div style="
+background-color:#184d2b;
+padding:20px;
+border-radius:10px;
+border-left:6px solid #4CAF50;
+">
+<h3 style="color:#7CFC98;">📈 Business Insight</h3>
+<p style="font-size:19px; color:white;">
+The <b>{highest_name}</b> industry attracts the highest number of job applications
+<span style="font-size:24px; font-weight:bold; color:#FFD54F;">
+{highest_val:,.0f}
+</span> indicating the strongest demand from job seekers.
+</p>
+<p style="font-size:18px; color:white;">
+It is followed by
+<b>{second_name}</b>
+<span style="font-size:18px; font-weight:bold; color:#FFD54F;">
+{second_val:,.0f}
+</span> applications and
+<b>{third_name}</b>
+<span style="font-size:18px; font-weight:bold; color:#FFD54F;">
+{third_val:,.0f}
+</span> applications.
+</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
-st.subheader("Business Q5: How has hiring trends (job postings) changed over time?")
+st.markdown("---")
+st.subheader("🔍 Business Question 4")
+st.markdown(
+    """
+### Which industries are hardest to fill?
+"""
+)
+st.write(
+    "This visualization compares total repost counts across industries — how often employers had to relist a vacancy."
+)
+st.subheader("Competition Index 🔍")
+reposts_by_category = (
+    category_agg["total_reposts"].sort_values(ascending=False).head(CATEGORY_SALARY_TOP_N)
+)
+render_category_chart(
+    reposts_by_category,
+    lambda s: make_metric_bar(
+        s.sort_values(ascending=True),
+        SEQUENTIAL_RED_SCALE,
+        "{:,.0f}",
+        "Total repost count",
+    ),
+)
+
+if len(reposts_by_category):
+    ranked = reposts_by_category.sort_values(ascending=False)
+    highest_name, highest_val = ranked.index[0], ranked.iloc[0]
+    second_name, second_val = ranked.index[1], ranked.iloc[1]
+    third_name, third_val = ranked.index[2], ranked.iloc[2]
+    st.markdown(
+        f"""
+<div style="
+background-color:#184d2b;
+padding:20px;
+border-radius:10px;
+border-left:6px solid #4CAF50;
+">
+<h3 style="color:#7CFC98;">📈 Business Insight</h3>
+<p style="font-size:19px; color:white;">
+The <b>{highest_name}</b> industry has the highest repost count
+<span style="font-size:24px; font-weight:bold; color:#FFD54F;">
+{highest_val:,.0f}
+</span> indicating it is comparatively harder to fill than other industries.
+</p>
+<p style="font-size:18px; color:white;">
+It is followed by
+<b>{second_name}</b>
+<span style="font-size:18px; font-weight:bold; color:#FFD54F;">
+{second_val:,.0f}
+</span> and
+<b>{third_name}</b>
+<span style="font-size:18px; font-weight:bold; color:#FFD54F;">
+{third_val:,.0f}
+</span> reposts.
+</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+st.markdown("---")
+st.subheader("🔍 Business Question 5")
+st.markdown(
+    """
+### How has hiring changed over time?
+"""
+)
+st.write("This visualization checks the hiring trend over time.")
+st.subheader("Hiring Trend 🔍")
 
 
 def make_time_bar(series: pd.Series) -> go.Figure:
     fig = go.Figure(
-        go.Bar(
-            x=series.values,
-            y=series.index,
-            orientation="h",
-            marker=dict(color=CATEGORICAL_PALETTE[0], cornerradius=4),
-            text=[f"{v:,.0f}" for v in series.values],
-            textposition="outside",
-            cliponaxis=False,
-            hovertemplate="%{y}<br>%{x:,.0f} postings<extra></extra>",
+        go.Scatter(
+            x=series.index,
+            y=series.values,
+            mode="lines+markers",
+            line=dict(color="#00B4D8", width=4),
+            marker=dict(size=8),
+            hovertemplate="%{x}<br>%{y:,.0f} postings<extra></extra>",
         )
     )
     fig.update_layout(
-        height=max(280, 60 * len(series)),
-        bargap=0.35,
-        plot_bgcolor=SURFACE,
-        paper_bgcolor=SURFACE,
-        font=dict(color=TEXT_PRIMARY, family="system-ui, -apple-system, sans-serif"),
-        margin=dict(l=10, r=70, t=10, b=10),
-        xaxis=dict(
-            title="Job postings",
-            gridcolor=GRIDLINE,
-            zeroline=False,
-            tickformat=",.0f",
-        ),
-        yaxis=dict(title=None),
+        template="plotly_dark",
+        height=500,
+        margin=dict(l=10, r=20, t=40, b=10),
+        title="Hiring Trend",
+        xaxis=dict(title="Period"),
+        yaxis=dict(title="Number of job postings"),
     )
     return fig
 
@@ -482,8 +690,78 @@ else:
 
 if postings_by_period.sum():
     st.plotly_chart(make_time_bar(postings_by_period), width="stretch")
+
+    ranked_periods = postings_by_period.sort_values(ascending=False)
+    if len(ranked_periods) >= 3:
+        highest_name, highest_val = ranked_periods.index[0], ranked_periods.iloc[0]
+        second_name, second_val = ranked_periods.index[1], ranked_periods.iloc[1]
+        third_name, third_val = ranked_periods.index[2], ranked_periods.iloc[2]
+        st.markdown(
+            f"""
+<div style="
+background-color:#184d2b;
+padding:20px;
+border-radius:10px;
+border-left:6px solid #4CAF50;
+">
+<h3 style="color:#7CFC98;">📈 Business Insight</h3>
+<p style="font-size:19px; color:white;">
+Hiring activity <b>peaked in {highest_name}</b> with
+<span style="font-size:24px; font-weight:bold; color:#FFD54F;">
+{highest_val:,.0f}
+</span>
+job postings.
+</p>
+<p style="font-size:18px; color:white;">
+The next strongest periods were
+<b>{second_name}</b>
+(<span style="color:#FFD54F;">{second_val:,.0f}</span>)
+and
+<b>{third_name}</b>
+(<span style="color:#FFD54F;">{third_val:,.0f}</span>),
+indicating sustained recruitment demand during this period.
+</p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
 else:
     st.info("No postings match the current filters.")
+
+top_salary_industry_label = top_salary_industry or "the top-paying industries"
+st.markdown(
+    f"""
+<div style="
+background-color:#153B73;
+padding:25px;
+border-radius:10px;
+border-left:8px solid #5DADE2;
+">
+
+<h2 style="color:#A9D6FF; font-size:34px;">
+📌 Key Business Conclusions:
+</h2>
+
+<div style="font-size:24px; color:white; line-height:2.0;">
+💰<b>{top_salary_industry_label}</b> offers the highest average monthly salary.
+</div>
+
+<div style="font-size:24px; color:white; line-height:2.0; margin-top:15px;">
+💼 Hiring demand remains strong across key industries, with sustained recruitment activity over time.
+</div>
+
+<div style="font-size:24px; color:white; line-height:2.0; margin-top:15px;">
+📥Competition differs significantly across industries, indicating varying levels of job seeker interest.
+</div>
+
+<div style="font-size:24px; color:white; line-height:2.0; margin-top:15px;">
+🔍This dashboard enables interactive exploration of salary, hiring demand, competition, and employment patterns to support informed career and business decisions.
+</div>
+
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
 st.divider()
 
@@ -583,9 +861,9 @@ st.dataframe(
         "numberOfVacancies": st.column_config.NumberColumn("Vacancies", format="%d"),
         "employmentTypes": st.column_config.TextColumn("Employment type"),
         "minimumYearsExperience": st.column_config.NumberColumn("Min. years experience", format="%d"),
-        "salary_maximum": st.column_config.NumberColumn("Salary max", format="$%,d"),
-        "salary_minimum": st.column_config.NumberColumn("Salary min", format="$%,d"),
-        "average_salary": st.column_config.NumberColumn("Avg salary", format="$%,.0f"),
+        "salary_maximum": st.column_config.NumberColumn("Salary max", format="dollar"),
+        "salary_minimum": st.column_config.NumberColumn("Salary min", format="dollar"),
+        "average_salary": st.column_config.NumberColumn("Avg salary", format="dollar"),
         "metadata_jobPostId": st.column_config.TextColumn("Job Post ID"),
     },
 )
