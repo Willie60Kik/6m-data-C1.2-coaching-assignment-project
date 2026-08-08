@@ -559,7 +559,7 @@ It is followed by
     )
 
 st.markdown("---")
-st.subheader("🔍 Business Question 4")
+stst.subheader("🔍 Business Question 4")
 st.markdown(
     """
 ### Which industries are hardest to fill?
